@@ -1,12 +1,35 @@
-class sensor {
+class Habitacion {
   public:
-    int pin;
-    String tipo;
-    float valor;
+    int pinT, pinM, pinL, pinV, pinP;
+    String nombre;
+    float valorT, valorM, valorL, valorV, valorP;
+    Habitacion() {}
+    Habitacion(String _nombre,int _pinT, int _pinM, int _pinV, int _pinP, int _pinL ) {
+      pinT = _pinT;
+      pinM = _pinM;
+      pinV = _pinV;
+      pinL = _pinL;
+
+      pinP = _pinP;
+      nombre = _nombre;
+      valorT = 0.0;
+      valorM = 0.0;
+      valorL = 0.0;
+      valorV = 0.0;
+      valorP = 0.0;
+
+      pinMode(pinT, INPUT);
+      pinMode(pinM, INPUT);
+      pinMode(pinL, INPUT);
+      pinMode(pinV, INPUT);
+      pinMode(pinP, INPUT);
+
+
+    }
 
 };
 
-sensor* temperatura = new sensor[20];
+Habitacion habitaciones[30];
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -48,31 +71,37 @@ void loop() {
     token = strtok(NULL, s);
 
   }
-///
+  ///
   int y = 0;
   while (aux[y] != NULL) {
-    Serial.println(aux[y]);
-
- char str2[500];
-  aux[y].toCharArray(str2, 500);
-  const char s2[2] = "-";
-  char *token2;
-token2=strtok(str2,s2);
 
 
- while ( token2 != NULL ) {
+    char str2[500];
+    aux[y].toCharArray(str2, 500);
+    const char s2[2] = "-";
+    char *token2;
+    token2 = strtok(str2, s2);
 
-    Serial.println(token2);
-  
+    String z[6];
+    int p = 0;
+    while ( token2 != NULL ) {
+      z[p] = String(token2);
 
 
 
-    token2 = strtok(NULL, s2);
+      token2 = strtok(NULL, s2);
+      p++;
 
-  }
+    }
+
+     habitaciones[y]=Habitacion(String(z[0]),String(z[1]).toInt(),String(z[2]).toInt(),String(z[3]).toInt(),String(z[4]).toInt(),String(z[5]).toInt());
 
 
-  
+
+     
+      
+ 
+
     ////////////////
 
 
@@ -80,7 +109,9 @@ token2=strtok(str2,s2);
   }
 
 
-///
+  ///
 
-
+Serial.println("fin del loop");
+Serial.println(habitaciones[0].nombre);
+Serial.println(habitaciones[1].nombre);
 }
