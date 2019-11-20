@@ -1,10 +1,20 @@
+#include <MsTimer2.h>
+
+#include <DHT.h>
+//claseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/////////////////////////////////////////////////////////////////////
 class Habitacion {
+
+
   public:
     int pinT, pinM, pinL, pinV, pinP;
     String nombre;
     float valorT, valorM, valorL, valorV, valorP;
+
+
+
+
     Habitacion() {}
-    Habitacion(String _nombre,int _pinT, int _pinM, int _pinV, int _pinP, int _pinL ) {
+    Habitacion(String _nombre, int _pinT, int _pinM, int _pinV, int _pinP, int _pinL ) {
       pinT = _pinT;
       pinM = _pinM;
       pinV = _pinV;
@@ -25,19 +35,100 @@ class Habitacion {
       pinMode(pinP, INPUT);
 
 
+
+
+    }
+    float Habitacion::getTemperatura() {
+#define DHTPIN  pinT
+      DHT dht(DHTPIN, DHT11);
+      dht.begin();
+
+      return   dht.readTemperature();
     }
 
-};
 
+
+};////////////////////////////////////////fin de la clase
+
+//variables universales para todo el programa
+int contadorHabitaciones;
 Habitacion habitaciones[30];
+int flatThread = 0;
+
+void fun() {
+
+  long timee=micros();
+
+
+    Serial.print(micros());
+  Serial.print("==");
+  Serial.println(timee+200);
+
+  Serial.println(flatThread);
+  
+  if (flatThread == 0) {
+    flatThread=1;
+   
+ while(micros()<timee+200){
+
+  
+  
+  
+  
+    Serial.println("1");
+
+ }
+
+  }
+  if (flatThread == 1) {
+ flatThread=2;
+ while(micros()<timee+200){
+      Serial.println("2");
+ }
+  }
+
+  if (flatThread == 2) {
+    flatThread=0;
+ 
+   while(micros()<timee+200){  
+   Serial.println("3");
+   }
+  }
+
+}
+
+
+
+
 void setup() {
+  contadorHabitaciones = 0;
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.setTimeout(200);
+  getConf();
+
+
+  MsTimer2::set(1100, fun);
+  MsTimer2::start();
+
+
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  ///
+  while (1);
+
+}
+
+
+
+
+
+
+
+//Metodoooooooooooooooooooooooooood//////////////////////////////////////////////////////////////////////////////////
+void getConf() {
   Serial.print("S");
   while (!Serial.available());
   String confi = Serial.readString();
@@ -54,28 +145,14 @@ void loop() {
   int x = 0;
   String aux[200];
   while ( token != NULL ) {
-
-    Serial.print("se entro al while con x=");
-    Serial.println(x);
-    ///////
-    Serial.print("del token ");
-    Serial.println(token);
     aux[x] = String(token);
     aux[x] = String(token);
-    Serial.print("del array ");
-    Serial.println(aux[x]);
     x++;
-
-
-
     token = strtok(NULL, s);
-
   }
   ///
   int y = 0;
   while (aux[y] != NULL) {
-
-
     char str2[500];
     aux[y].toCharArray(str2, 500);
     const char s2[2] = "-";
@@ -94,13 +171,13 @@ void loop() {
 
     }
 
-     habitaciones[y]=Habitacion(String(z[0]),String(z[1]).toInt(),String(z[2]).toInt(),String(z[3]).toInt(),String(z[4]).toInt(),String(z[5]).toInt());
+    habitaciones[y] = Habitacion(String(z[0]), String(z[1]).toInt(), String(z[2]).toInt(), String(z[3]).toInt(), String(z[4]).toInt(), String(z[5]).toInt());
+    contadorHabitaciones++;
 
 
 
-     
-      
- 
+
+
 
     ////////////////
 
@@ -108,10 +185,4 @@ void loop() {
     y++;
   }
 
-
-  ///
-
-Serial.println("fin del loop");
-Serial.println(habitaciones[0].nombre);
-Serial.println(habitaciones[1].nombre);
 }
