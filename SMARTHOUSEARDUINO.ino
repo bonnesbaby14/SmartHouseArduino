@@ -53,47 +53,9 @@ class Habitacion {
 //variables universales para todo el programa
 int contadorHabitaciones;
 Habitacion habitaciones[30];
-int flatThread = 0;
+int flatThread;
 
 void fun() {
-
-  long timee=micros();
-
-
-    Serial.print(micros());
-  Serial.print("==");
-  Serial.println(timee+200);
-
-  Serial.println(flatThread);
-  
-  if (flatThread == 0) {
-    flatThread=1;
-   
- while(micros()<timee+200){
-
-  
-  
-  
-  
-    Serial.println("1");
-
- }
-
-  }
-  if (flatThread == 1) {
- flatThread=2;
- while(micros()<timee+200){
-      Serial.println("2");
- }
-  }
-
-  if (flatThread == 2) {
-    flatThread=0;
- 
-   while(micros()<timee+200){  
-   Serial.println("3");
-   }
-  }
 
 }
 
@@ -106,10 +68,11 @@ void setup() {
   Serial.begin(115200);
   Serial.setTimeout(200);
   getConf();
+  flatThread=0;
 
 
-  MsTimer2::set(1100, fun);
-  MsTimer2::start();
+ // MsTimer2::set(220, fun);
+//  MsTimer2::start();
 
 
 }
@@ -117,7 +80,64 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   ///
-  while (1);
+
+
+
+ 
+
+  
+ long timee = micros();
+  if (flatThread == 0) {
+     flatThread = 1;
+       Serial.println("comparacion para el 1");
+  Serial.print(micros());
+    Serial.print("<");
+      Serial.println(timee + 200000);
+  Serial.println("......................................");
+    while (micros() < timee + 200000) {
+     
+      Serial.print(micros());
+  Serial.print("==");
+  Serial.println(timee + 200000);
+
+
+      Serial.println("1");
+
+    }
+
+  }
+ timee = micros();
+  if (flatThread == 1) {
+    flatThread = 2;
+
+  Serial.println("comparacion para el 2");
+  Serial.print(micros());
+    Serial.print("<");
+      Serial.println(timee + 200000);
+  Serial.println("......................................");
+
+    while (micros() < timee + 200000) {
+      Serial.println("2");
+    }
+    
+  }
+
+  
+  timee = micros();
+  if (flatThread == 2) {
+    flatThread = 0;
+  Serial.println("comparacion para el 3");
+  Serial.print(micros());
+    Serial.print("<");
+      Serial.println(timee + 200000);
+  Serial.println("......................................");
+    while (micros() < timee + 200000) {
+      Serial.println("3");
+    }
+  }
+  
+
+  
 
 }
 
