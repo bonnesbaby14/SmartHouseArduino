@@ -1,12 +1,10 @@
-#include <MsTimer2.h>
-
 #include <DHT.h>
 //claseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/////////////////////////////////////////////////////////////////////
 class Habitacion {
 
 
   public:
-    int pinT, pinM, pinL, pinV, pinP;
+    int pinT, pinM, pinL, pinV, pinP, id;
     String nombre;
     float valorT, valorM, valorL, valorV, valorP;
 
@@ -14,7 +12,8 @@ class Habitacion {
 
 
     Habitacion() {}
-    Habitacion(String _nombre, int _pinT, int _pinM, int _pinV, int _pinP, int _pinL ) {
+    Habitacion(String _nombre, int _pinT, int _pinM, int _pinV, int _pinP, int _pinL, int _id ) {
+      id = _id;
       pinT = _pinT;
       pinM = _pinM;
       pinV = _pinV;
@@ -42,23 +41,20 @@ class Habitacion {
 #define DHTPIN  pinT
       DHT dht(DHTPIN, DHT11);
       dht.begin();
-
-      return   dht.readTemperature();
+      delay(100);
+float s=dht.readTemperature();
+delay(30);
+      return s  ;
     }
 
 
 
-};////////////////////////////////////////fin de la clase
+};////////////////////////////////////////////////////////////////////////////////////fin de la clase
 
 //variables universales para todo el programa
 int contadorHabitaciones;
 Habitacion habitaciones[30];
 int flatThread;
-
-void fun() {
-
-}
-
 
 
 
@@ -68,11 +64,9 @@ void setup() {
   Serial.begin(115200);
   Serial.setTimeout(200);
   getConf();
-  flatThread=0;
+  flatThread = 0;
 
 
- // MsTimer2::set(220, fun);
-//  MsTimer2::start();
 
 
 }
@@ -83,61 +77,52 @@ void loop() {
 
 
 
- 
 
-  
- long timee = micros();
+
+
+  long timee = micros();
   if (flatThread == 0) {
-     flatThread = 1;
-       Serial.println("comparacion para el 1");
-  Serial.print(micros());
-    Serial.print("<");
-      Serial.println(timee + 200000);
-  Serial.println("......................................");
+    //hilo uno para enviar datos de senores
+    flatThread = 1;
+    String data="";
     while (micros() < timee + 200000) {
-     
-      Serial.print(micros());
-  Serial.print("==");
-  Serial.println(timee + 200000);
+data="";
+
+for(int y=0;y<contadorHabitaciones;y++){
+data+="/"+String(habitaciones[y].getTemperatura())+"-"+String(habitaciones[y].valorM)+"-"+String(habitaciones[y].valorV)+"-"+String(habitaciones[y].valorP)+"-"+String(habitaciones[y].valorL)+"-"+String(habitaciones[y].id);
+  
+  }
 
 
-      Serial.println("1");
 
     }
-
+    Serial.print("A");
+    delay(10);
+Serial.print(data);
   }
- timee = micros();
+  timee = micros();
   if (flatThread == 1) {
     flatThread = 2;
 
-  Serial.println("comparacion para el 2");
-  Serial.print(micros());
-    Serial.print("<");
-      Serial.println(timee + 200000);
-  Serial.println("......................................");
 
     while (micros() < timee + 200000) {
-      Serial.println("2");
+
     }
-    
+
   }
 
-  
+
   timee = micros();
   if (flatThread == 2) {
     flatThread = 0;
-  Serial.println("comparacion para el 3");
-  Serial.print(micros());
-    Serial.print("<");
-      Serial.println(timee + 200000);
-  Serial.println("......................................");
+
     while (micros() < timee + 200000) {
-      Serial.println("3");
+   
     }
   }
-  
 
-  
+
+
 
 }
 
@@ -179,7 +164,7 @@ void getConf() {
     char *token2;
     token2 = strtok(str2, s2);
 
-    String z[6];
+    String z[7];
     int p = 0;
     while ( token2 != NULL ) {
       z[p] = String(token2);
@@ -191,7 +176,7 @@ void getConf() {
 
     }
 
-    habitaciones[y] = Habitacion(String(z[0]), String(z[1]).toInt(), String(z[2]).toInt(), String(z[3]).toInt(), String(z[4]).toInt(), String(z[5]).toInt());
+    habitaciones[y] = Habitacion(String(z[0]), String(z[1]).toInt(), String(z[2]).toInt(), String(z[3]).toInt(), String(z[4]).toInt(), String(z[5]).toInt(), String(z[6]).toInt());
     contadorHabitaciones++;
 
 
