@@ -42,8 +42,10 @@ class Habitacion {
       DHT dht(DHTPIN, DHT11);
       dht.begin();
       delay(100);
-float s=dht.readTemperature();
-delay(30);
+      float s = dht.readTemperature();
+      if(isnan(s)){
+        s=valorT;
+        }else{valorT=s;}
       return s  ;
     }
 
@@ -84,21 +86,21 @@ void loop() {
   if (flatThread == 0) {
     //hilo uno para enviar datos de senores
     flatThread = 1;
-    String data="";
+    String data = "";
     while (micros() < timee + 200000) {
-data="";
+      data = "";
 
-for(int y=0;y<contadorHabitaciones;y++){
-data+="/"+String(habitaciones[y].getTemperatura())+"-"+String(habitaciones[y].valorM)+"-"+String(habitaciones[y].valorV)+"-"+String(habitaciones[y].valorP)+"-"+String(habitaciones[y].valorL)+"-"+String(habitaciones[y].id);
-  
-  }
+      for (int y = 0; y < contadorHabitaciones; y++) {
+        data += "/" + String(habitaciones[y].getTemperatura()) + "-" + String(habitaciones[y].valorM) + "-" + String(habitaciones[y].valorV) + "-" + String(habitaciones[y].valorP) + "-" + String(habitaciones[y].valorL) + "-" + String(habitaciones[y].id);
+
+      }
 
 
 
     }
     Serial.print("A");
     delay(10);
-Serial.print(data);
+    Serial.print(data);
   }
   timee = micros();
   if (flatThread == 1) {
@@ -117,7 +119,7 @@ Serial.print(data);
     flatThread = 0;
 
     while (micros() < timee + 200000) {
-   
+
     }
   }
 
