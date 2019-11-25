@@ -1,5 +1,5 @@
 #include <Servo.h>
-
+#include <Keypad.h>
 #include <DHT.h>
 //claseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/////////////////////////////////////////////////////////////////////
 
@@ -16,13 +16,13 @@ class Habitacion {
 
 
     Habitacion() {}
-    Habitacion(String _nombre, int _pinT, int _pinM, int _pinV, int _pinP, int _pinL, int _id ,float _temperatura) {
+    Habitacion(String _nombre, int _pinT, int _pinM, int _pinV, int _pinP, int _pinL, int _id , float _temperatura) {
       id = _id;
       pinT = _pinT;
       pinM = _pinM;
       pinV = _pinV;
       pinL = _pinL;
-      temperatura=_temperatura;
+      temperatura = _temperatura;
 
       pinP = _pinP;
       nombre = _nombre;
@@ -37,7 +37,7 @@ class Habitacion {
       pinMode(pinL, INPUT);
       pinMode(pinV, INPUT);
       pinMode(pinP, INPUT);
-      servo.attach(pinM);
+      servo.attach(pinM, 544, 3700);
       servo.write(1.0);
 
 
@@ -62,7 +62,24 @@ class Habitacion {
 
 };////////////////////////////////////////////////////////////////////////////////////fin de la clase
 
-//variables universales para todo el programa
+//variables universales para todo el programa////////////////////////////
+
+
+const byte COLUMNAS = 3;
+const byte FILAS = 4;
+byte pinsFilas[FILAS] = {39, 41, 43, 45};
+byte pinsColumnas[COLUMNAS] = {47, 49, 51};
+
+String clave1, clave2, clave3, upLight, offLight;
+
+char teclas [FILAS][COLUMNAS] = {
+
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+  {'7', '8', '9'},
+  {'E', '0', 'F'}
+
+};
 int contadorHabitaciones;
 Habitacion habitaciones[30];
 int flatThread;
@@ -194,9 +211,79 @@ void loop() {
 
   timee = micros();
   if (flatThread == 2) {
+    //leer configiracion basica de la casa
     flatThread = 0;
 
     while (micros() < timee + 200000) {
+
+      //////////////////////////////////////
+delay(10);
+      Serial.print("H");
+      
+      while (!Serial.available());
+      String confi = Serial.readString();
+
+      char str[1024];
+      confi.toCharArray(str, 1024);
+      const char s[2] = "/";
+      char *token;
+
+      /* get the first token */
+      token = strtok(str, s);
+
+      /* walk through other tokens */
+      int x = 0;
+      String aux[200];
+      while ( token != NULL ) {
+        aux[x] = String(token);
+        aux[x] = String(token);
+        x++;
+        token = strtok(NULL, s);
+      }
+      ///
+      int y = 0;
+      while (aux[y] != NULL) {
+        char str2[500];
+        aux[y].toCharArray(str2, 500);
+        const char s2[2] = "-";
+        char *token2;
+        token2 = strtok(str2, s2);
+
+        String z[5];
+        int p = 0;
+        while ( token2 != NULL ) {
+          z[p] = String(token2);
+
+
+
+          token2 = strtok(NULL, s2);
+          p++;
+
+        }
+
+
+        clave1 = z[0];
+        clave2 = z[1];
+        clave3 = z[2];
+        upLight = z[3];
+        offLight = z[4];
+
+
+
+
+
+
+
+        ////////////////
+
+
+        y++;
+      }
+
+      //////////////////////////////////////
+
+
+
 
     }
   }
