@@ -1,28 +1,31 @@
+#include <MyRealTimeClock.h>
+
 #include <Servo.h>
 #include <Keypad.h>
 #include <DHT.h>
+
 //claseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee/////////////////////////////////////////////////////////////////////
 
 class Habitacion {
 
 
   public:
-    int pinT, pinM, pinL, pinV, pinP, id;
+    int pinT, pinM, pinL, pinV, pinP, id, pinLuz;
     String nombre;
-    float valorT, valorM, valorL, valorV, valorP, temperatura;
+    float valorT, valorM, valorL, valorV, valorP, temperatura, luz;
     Servo servo;
 
 
-
-
     Habitacion() {}
-    Habitacion(String _nombre, int _pinT, int _pinM, int _pinV, int _pinP, int _pinL, int _id , float _temperatura) {
+    Habitacion(String _nombre, int _pinT, int _pinM, int _pinV, int _pinP, int _pinL, int _id , float _temperatura, float _luz, float _pinLuz) {
       id = _id;
       pinT = _pinT;
       pinM = _pinM;
       pinV = _pinV;
       pinL = _pinL;
+      pinLuz = _pinLuz;
       temperatura = _temperatura;
+      luz = _luz;
 
       pinP = _pinP;
       nombre = _nombre;
@@ -37,6 +40,7 @@ class Habitacion {
       pinMode(pinL, INPUT);
       pinMode(pinV, INPUT);
       pinMode(pinP, INPUT);
+      pinMode(18, OUTPUT);
       servo.attach(pinM, 544, 3700);
       servo.write(1.0);
 
@@ -44,6 +48,9 @@ class Habitacion {
 
 
     }
+
+
+
     float Habitacion::getTemperatura() {
 #define DHTPIN  pinT
       DHT dht(DHTPIN, DHT11);
@@ -58,6 +65,12 @@ class Habitacion {
       return s  ;
     }
 
+    float Habitacion::getLuz() {
+
+      float x = analogRead(pinL);
+      float d = x * (100.00 / 1024.00);
+      return d;
+    }
 
 
 };////////////////////////////////////////////////////////////////////////////////////fin de la clase
@@ -65,41 +78,87 @@ class Habitacion {
 //variables universales para todo el programa////////////////////////////
 
 
-const byte COLUMNAS = 3;
+const byte COLUMNAS = 4;
 const byte FILAS = 4;
-byte pinsFilas[FILAS] = {39, 41, 43, 45};
-byte pinsColumnas[COLUMNAS] = {47, 49, 51};
+byte pinsFilas[FILAS] = {37, 39, 41, 43};
+byte pinsColumnas[COLUMNAS] = {45, 47, 49, 51};
 
-String clave1, clave2, clave3, upLight, offLight;
+//entrada del reloj  despues entrada y salida, despues habiltadr de entrada y salida
+MyRealTimeClock myRTC(12, 13, 11);
+
+
+String clave1, clave2, clave3, upLight, offLight, horanow;
 
 char teclas [FILAS][COLUMNAS] = {
 
-  {'1', '2', '3'},
-  {'4', '5', '6'},
-  {'7', '8', '9'},
-  {'E', '0', 'F'}
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'E', '0', 'F', 'D'}
 
 };
 int contadorHabitaciones;
 Habitacion habitaciones[30];
 int flatThread;
 int hora = 0, minuto = 0, segundo = 0;
+bool access = false;
+bool flatfecha = true;
+int escalera1 = 10, escalera2 = 9, escalera3 = 8;
+
+int conteoError = 0;
+
+
+
+
+
+Keypad teclado = Keypad(makeKeymap(teclas), pinsFilas, pinsColumnas, FILAS, COLUMNAS);
+
+
+
 
 
 
 
 void setup() {
+
+  pinMode(escalera1, INPUT);
+  pinMode(escalera2, INPUT);
+  pinMode(escalera3, INPUT);
+
+  pinMode(52, OUTPUT);
+  pinMode(50, OUTPUT);
+  pinMode(48, OUTPUT);
+  pinMode(46, OUTPUT);
+  pinMode(44, OUTPUT);
+  pinMode(42, OUTPUT);
+  pinMode(40, OUTPUT);
+  pinMode(38, OUTPUT);
+  pinMode(36, OUTPUT);
+  pinMode(34, OUTPUT);
+   //esto es para luces de exterior
+    pinMode(2, OUTPUT);
+
   contadorHabitaciones = 0;
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.setTimeout(200);
   getConf();
   flatThread = 0;
+  obtenerPass();
 
 
 
 
 }
+
+
+
+
+
+
+
+
+
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -107,9 +166,8 @@ void loop() {
 
 
 
-
-
-
+  getClave();
+  lucesTime();
   long timee = micros();
 
   if (flatThread == 0) {
@@ -117,10 +175,11 @@ void loop() {
     flatThread = 1;
     String data = "";
     while (micros() < timee + 200000) {
+      getClave();
       data = "";
 
       for (int y = 0; y < contadorHabitaciones; y++) {
-        data += "/" + String(habitaciones[y].getTemperatura()) + "-" + String(habitaciones[y].valorM) + "-" + String(habitaciones[y].valorV) + "-" + String(habitaciones[y].valorP) + "-" + String(habitaciones[y].valorL) + "-" + String(habitaciones[y].id);
+        data += "/" + String(habitaciones[y].getLuz()) + "-" + String(habitaciones[y].getTemperatura()) + "-" + String(habitaciones[y].valorM) + "-" + String(habitaciones[y].valorV) + "-" + String(habitaciones[y].valorP) + "-" + String(habitaciones[y].getLuz()) + "-" + String(habitaciones[y].id);
 
       }
 
@@ -136,7 +195,8 @@ void loop() {
 
 
 
-
+  getClave();
+  lucesTime();
   timee = micros();
   if (flatThread == 1) {
     //hilo para checar temperatura
@@ -145,6 +205,7 @@ void loop() {
 
     while (micros() < timee + 200000) {
 
+      getClave();
       for (int x = 0; x < contadorHabitaciones; x++) {
 
         if (habitaciones[x].valorT < habitaciones[x].temperatura) {
@@ -208,81 +269,96 @@ void loop() {
 
 
 
-
+  getClave();
+  lucesTime();
   timee = micros();
   if (flatThread == 2) {
     //leer configiracion basica de la casa
+    flatThread = 3;
+
+    while (micros() < timee + 200000) {
+      getClave();
+      //////////////////////////////////////
+   
+     
+      //////////////////////////////////////
+
+
+
+
+    }
+  }
+  getClave();
+  lucesTime();
+  timee = micros();
+  if (flatThread == 3) {
+    //leer escaleras
+    flatThread = 4;
+
+    while (micros() < timee + 200000) {
+      if (digitalRead(escalera1) == LOW) {
+        digitalWrite(34, HIGH);
+        digitalWrite(36, HIGH);
+        digitalWrite(38, HIGH);
+        digitalWrite(40, HIGH);
+        delay(1400);
+        digitalWrite(34, LOW);
+        digitalWrite(36, LOW);
+        digitalWrite(38, LOW);
+        digitalWrite(40, LOW);
+      }
+      if (digitalRead(escalera2) == LOW) {
+        digitalWrite(40, HIGH);
+        digitalWrite(42, HIGH);
+        digitalWrite(44, HIGH);
+        digitalWrite(46, HIGH);
+        delay(1400);
+        digitalWrite(40, LOW);
+        digitalWrite(42, LOW);
+        digitalWrite(44, LOW);
+        digitalWrite(46, LOW);
+      }
+
+      if (digitalRead(escalera3) == LOW) {
+        digitalWrite(46, HIGH);
+        digitalWrite(48, HIGH);
+        digitalWrite(50, HIGH);
+        digitalWrite(52, HIGH);
+        delay(1400);
+        digitalWrite(46, LOW);
+        digitalWrite(48, LOW);
+        digitalWrite(50, LOW);
+        digitalWrite(52, LOW);
+      }
+
+
+
+    }
+  }
+
+  getClave();
+  lucesTime();
+  timee = micros();
+  if (flatThread == 4) {
+    //ver la luz
     flatThread = 0;
 
     while (micros() < timee + 200000) {
 
-      //////////////////////////////////////
-delay(10);
-      Serial.print("H");
-      
-      while (!Serial.available());
-      String confi = Serial.readString();
+      for (int x = 0; x < contadorHabitaciones; x++) {
 
-      char str[1024];
-      confi.toCharArray(str, 1024);
-      const char s[2] = "/";
-      char *token;
+        float d = habitaciones[x].getLuz();
 
-      /* get the first token */
-      token = strtok(str, s);
+        if (d < 50) {
+          digitalWrite(habitaciones[x].pinLuz, HIGH);
 
-      /* walk through other tokens */
-      int x = 0;
-      String aux[200];
-      while ( token != NULL ) {
-        aux[x] = String(token);
-        aux[x] = String(token);
-        x++;
-        token = strtok(NULL, s);
-      }
-      ///
-      int y = 0;
-      while (aux[y] != NULL) {
-        char str2[500];
-        aux[y].toCharArray(str2, 500);
-        const char s2[2] = "-";
-        char *token2;
-        token2 = strtok(str2, s2);
-
-        String z[5];
-        int p = 0;
-        while ( token2 != NULL ) {
-          z[p] = String(token2);
-
-
-
-          token2 = strtok(NULL, s2);
-          p++;
+        } else {
+          digitalWrite(habitaciones[x].pinLuz, LOW);
 
         }
 
 
-        clave1 = z[0];
-        clave2 = z[1];
-        clave3 = z[2];
-        upLight = z[3];
-        offLight = z[4];
-
-
-
-
-
-
-
-        ////////////////
-
-
-        y++;
       }
-
-      //////////////////////////////////////
-
-
 
 
     }
@@ -291,15 +367,27 @@ delay(10);
 
 
 
-}
+
+
+
+}//loop
 
 
 
 
 
+//////////////////////////////////////////////////////////////////////
+// FUNCIONES                                                        //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
 
 
-//Metodoooooooooooooooooooooooooood//////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////
+// FUNCION PARA DEESCRAGAR CONFIGURACION (HABITACIONES)             //
+//////////////////////////////////////////////////////////////////////
 void getConf() {
   Serial.print("S");
   while (!Serial.available());
@@ -331,7 +419,7 @@ void getConf() {
     char *token2;
     token2 = strtok(str2, s2);
 
-    String z[8];
+    String z[10];
     int p = 0;
     while ( token2 != NULL ) {
       z[p] = String(token2);
@@ -343,7 +431,7 @@ void getConf() {
 
     }
 
-    habitaciones[y] = Habitacion(String(z[0]), String(z[1]).toInt(), String(z[2]).toInt(), String(z[3]).toInt(), String(z[4]).toInt(), String(z[5]).toInt(), String(z[6]).toInt(), String(z[7]).toInt());
+    habitaciones[y] = Habitacion(String(z[0]), String(z[1]).toInt(), String(z[2]).toInt(), String(z[3]).toInt(), String(z[4]).toInt(), String(z[5]).toInt(), String(z[6]).toInt(), String(z[7]).toInt(), String(z[8]).toInt(), String(z[9]).toInt());
     contadorHabitaciones++;
 
 
@@ -356,5 +444,289 @@ void getConf() {
 
     y++;
   }
+
+
+
+}
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+// FUNCION PARA ENCRIPTAR                                           //
+//////////////////////////////////////////////////////////////////////
+String encriptar(String k) {
+  String aux = "";
+  for (int s = 0; s < k.length() - 1; s++) {
+
+    int f = k.charAt(s) + 10;
+
+    aux = aux + char(f);
+
+
+  }
+
+
+
+  return aux;
+}
+
+//////////////////////////////////////////////////////////////////////
+// FUNCION PARA DESENCRIPTAR                                        //
+//////////////////////////////////////////////////////////////////////
+bool desencriptar(String a, String b) {
+  String aux = "";
+  for (int s = 0; s < a.length(); s++) {
+
+    int f = a.charAt(s) + 10;
+
+    aux = aux + char(f);
+
+
+  }
+
+  if (aux == b) {
+    return true;
+  } else {
+    return false;
+  }
+
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// FUNCION PARA OBTENER LA CLAVE DEL TECLADO                        //
+//////////////////////////////////////////////////////////////////////
+
+void getClave() {
+
+  String serie = "";
+
+  char tecla = teclado.getKey();
+  if (tecla != NO_KEY) {
+
+
+    tecla = NO_KEY;
+
+    while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+      tecla = teclado.getKey();
+    }
+    serie = serie + String(tecla);
+    tecla = NO_KEY;
+    while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+      tecla = teclado.getKey();
+    }
+    serie = serie + String(tecla);
+    tecla = NO_KEY;
+    while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+      tecla = teclado.getKey();
+    }
+    serie = serie + String(tecla);
+    tecla = NO_KEY;
+    while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+      tecla = teclado.getKey();
+    }
+    serie = serie + String(tecla);
+    tecla = NO_KEY;
+
+    while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+      tecla = teclado.getKey();
+    }
+
+
+    serie = serie + String(tecla);
+    tecla = NO_KEY;
+
+
+    if (desencriptar(serie, clave1)) {
+      digitalWrite(18, HIGH);
+      conteoError = 0;
+    } else if (desencriptar(serie, clave2)) {
+      conteoError = 0;
+      digitalWrite(18, HIGH);
+    } else if (desencriptar(serie, clave3)) {
+      conteoError = 0;
+      digitalWrite(18, HIGH);
+    } else {
+      digitalWrite(18, LOW);
+      conteoError++;
+      while (conteoError > 2) {
+        digitalWrite(17, HIGH);
+        delay(800);
+        serie = "";
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+
+
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+
+        if (desencriptar(serie, clave1)) {
+          digitalWrite(18, HIGH);
+          digitalWrite(17, LOW);
+          delay(800);
+          digitalWrite(17, LOW);
+          digitalWrite(18, LOW);
+          conteoError = 0;
+        }
+      }
+    }
+
+
+  }
+
+}
+
+
+
+void lucesTime() {
+
+
+  myRTC.updateTime();
+
+  String prueba = String(myRTC.minutes);
+  prueba += ":";
+  if(myRTC.seconds<10){
+      prueba += "0";
+        prueba += String(myRTC.seconds);
+    }else{
+      prueba += String(myRTC.seconds);
+      }
+
+Serial.print(prueba);
+Serial.print("==");
+Serial.println(upLight);
+Serial.print(prueba);
+Serial.print("==");
+Serial.println(offLight);
+  if (prueba == upLight) {
+   
+
+ digitalWrite(2,HIGH);
+  }
+  if (prueba == offLight) {
+
+ digitalWrite(2,LOW);
+  }
+  
+
+}
+
+
+void obtenerPass(){
+   Serial.print("H");
+
+      while (!Serial.available());
+      String confi = Serial.readString();
+
+      char str[1024];
+      confi.toCharArray(str, 1024);
+      const char s[2] = "/";
+      char *token;
+
+      /* get the first token */
+      token = strtok(str, s);
+
+      /* walk through other tokens */
+      int x = 0;
+      String aux[200];
+      while ( token != NULL ) {
+        aux[x] = String(token);
+        aux[x] = String(token);
+        x++;
+        token = strtok(NULL, s);
+      }
+      ///
+      int y = 0;
+      while (aux[y] != NULL) {
+        char str2[500];
+        aux[y].toCharArray(str2, 500);
+        const char s2[2] = "-";
+        char *token2;
+        token2 = strtok(str2, s2);
+
+        String z[6];
+        int p = 0;
+        while ( token2 != NULL ) {
+          z[p] = String(token2);
+
+
+
+          token2 = strtok(NULL, s2);
+          p++;
+
+        }
+
+
+        clave1 = z[0];
+        clave2 = z[1];
+        clave3 = z[2];
+        upLight = z[3];
+        offLight = z[4];
+        horanow = z[5];
+        while (flatfecha) {
+
+
+
+          char str3[200];
+          horanow.toCharArray(str3, 200);
+          const char s3[2] = ":";
+          char *token3;
+          token3 = strtok(str3, s3);
+
+          String d[2];
+          int p2 = 0;
+          while ( token3 != NULL ) {
+            d[p2] = String(token3);
+
+
+            token3 = strtok(NULL, s3);
+            p2++;
+
+          }
+          myRTC.setDS1302Time( d[1].toInt(), d[0].toInt(), 00, 5 , 11, 12, 2019);
+
+          flatfecha = false;
+        }
+
+
+
+
+
+
+
+
+
+        ////////////////
+
+
+        y++;
+      }
+
 
 }
