@@ -105,6 +105,8 @@ bool access = false;
 bool flatfecha = true;
 int escalera1 = 10, escalera2 = 9, escalera3 = 8;
 
+int totalPersonas = 0;
+
 int conteoError = 0;
 
 
@@ -125,6 +127,7 @@ void setup() {
   pinMode(escalera2, INPUT);
   pinMode(escalera3, INPUT);
 
+  //luces de escalera
   pinMode(52, OUTPUT);
   pinMode(50, OUTPUT);
   pinMode(48, OUTPUT);
@@ -135,9 +138,22 @@ void setup() {
   pinMode(38, OUTPUT);
   pinMode(36, OUTPUT);
   pinMode(34, OUTPUT);
-   //esto es para luces de exterior
-    pinMode(2, OUTPUT);
 
+
+  //esto es para luces de exterior
+  pinMode(2, OUTPUT);
+
+  //pines para el contador de personas
+  pinMode(3, INPUT);
+  pinMode(4, INPUT);
+
+  //pines para el pir y la alarma
+  pinMode(6, OUTPUT);
+  pinMode(5, INPUT);
+
+
+
+  
   contadorHabitaciones = 0;
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -164,6 +180,66 @@ void loop() {
   // put your main code here, to run repeatedly:
   ///
 
+if(totalPersonas==0){
+
+  if(digitalRead(5)==HIGH){
+    delay(50);
+    if(digitalRead(5)==HIGH){
+
+digitalWrite(6,HIGH);
+String serie="";
+char tecla;
+     while (true) {
+        digitalWrite(17, HIGH);
+        delay(800);
+        serie = "";
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+
+        while (tecla == NO_KEY || tecla == 'A' || tecla == 'B' || tecla == 'C' || tecla == 'D' || tecla == 'E' || tecla == 'F') {
+          tecla = teclado.getKey();
+        }
+
+
+        serie = serie + String(tecla);
+        tecla = NO_KEY;
+
+        if (desencriptar(serie, clave1)) {
+          digitalWrite(18, HIGH);
+          digitalWrite(17, LOW);
+          delay(800);
+          digitalWrite(17, LOW);
+          digitalWrite(18, LOW);
+          digitalWrite(6,LOW);
+          break;
+        }
+      }
+
+
+
+    
+    }
+    }
+  }
 
 
   getClave();
@@ -179,7 +255,7 @@ void loop() {
       data = "";
 
       for (int y = 0; y < contadorHabitaciones; y++) {
-        data += "/" + String(habitaciones[y].getLuz()) + "-" + String(habitaciones[y].getTemperatura()) + "-" + String(habitaciones[y].valorM) + "-" + String(habitaciones[y].valorV) + "-" + String(habitaciones[y].valorP) + "-" + String(habitaciones[y].getLuz()) + "-" + String(habitaciones[y].id);
+        data += "/" + String(habitaciones[y].getLuz()) + "-" + String(habitaciones[y].getTemperatura()) + "-" + String(habitaciones[y].valorM) + "-" + String(habitaciones[y].valorV) + "-" + String(habitaciones[y].valorP) + "-" + String(habitaciones[y].getLuz()) + "-" + String(habitaciones[y].id)+ "-" + String(totalPersonas);
 
       }
 
@@ -273,18 +349,34 @@ void loop() {
   lucesTime();
   timee = micros();
   if (flatThread == 2) {
-    //leer configiracion basica de la casa
+    //leer para el conteo de personas
     flatThread = 3;
 
     while (micros() < timee + 200000) {
-      getClave();
-      //////////////////////////////////////
-   
-     
-      //////////////////////////////////////
+
+      if (digitalRead(3) == LOW) {
+
+
+        delay(300);
+
+        totalPersonas++;
 
 
 
+      }
+
+      if (digitalRead(4) == LOW) {
+
+        delay(300);
+
+        totalPersonas--;
+        if (totalPersonas < 0) {
+          totalPersonas = 0;
+        }
+
+
+
+      }
 
     }
   }
@@ -611,108 +703,102 @@ void lucesTime() {
 
   String prueba = String(myRTC.minutes);
   prueba += ":";
-  if(myRTC.seconds<10){
-      prueba += "0";
-        prueba += String(myRTC.seconds);
-    }else{
-      prueba += String(myRTC.seconds);
-      }
+  if (myRTC.seconds < 10) {
+    prueba += "0";
+    prueba += String(myRTC.seconds);
+  } else {
+    prueba += String(myRTC.seconds);
+  }
 
-Serial.print(prueba);
-Serial.print("==");
-Serial.println(upLight);
-Serial.print(prueba);
-Serial.print("==");
-Serial.println(offLight);
   if (prueba == upLight) {
-   
 
- digitalWrite(2,HIGH);
+
+    digitalWrite(2, HIGH);
   }
   if (prueba == offLight) {
 
- digitalWrite(2,LOW);
+    digitalWrite(2, LOW);
   }
-  
+
 
 }
 
 
-void obtenerPass(){
-   Serial.print("H");
+void obtenerPass() {
+  Serial.print("H");
 
-      while (!Serial.available());
-      String confi = Serial.readString();
+  while (!Serial.available());
+  String confi = Serial.readString();
 
-      char str[1024];
-      confi.toCharArray(str, 1024);
-      const char s[2] = "/";
-      char *token;
+  char str[1024];
+  confi.toCharArray(str, 1024);
+  const char s[2] = "/";
+  char *token;
 
-      /* get the first token */
-      token = strtok(str, s);
+  /* get the first token */
+  token = strtok(str, s);
 
-      /* walk through other tokens */
-      int x = 0;
-      String aux[200];
-      while ( token != NULL ) {
-        aux[x] = String(token);
-        aux[x] = String(token);
-        x++;
-        token = strtok(NULL, s);
+  /* walk through other tokens */
+  int x = 0;
+  String aux[200];
+  while ( token != NULL ) {
+    aux[x] = String(token);
+    aux[x] = String(token);
+    x++;
+    token = strtok(NULL, s);
+  }
+  ///
+  int y = 0;
+  while (aux[y] != NULL) {
+    char str2[500];
+    aux[y].toCharArray(str2, 500);
+    const char s2[2] = "-";
+    char *token2;
+    token2 = strtok(str2, s2);
+
+    String z[6];
+    int p = 0;
+    while ( token2 != NULL ) {
+      z[p] = String(token2);
+
+
+
+      token2 = strtok(NULL, s2);
+      p++;
+
+    }
+
+
+    clave1 = z[0];
+    clave2 = z[1];
+    clave3 = z[2];
+    upLight = z[3];
+    offLight = z[4];
+    horanow = z[5];
+    while (flatfecha) {
+
+
+
+      char str3[200];
+      horanow.toCharArray(str3, 200);
+      const char s3[2] = ":";
+      char *token3;
+      token3 = strtok(str3, s3);
+
+      String d[2];
+      int p2 = 0;
+      while ( token3 != NULL ) {
+        d[p2] = String(token3);
+
+
+        token3 = strtok(NULL, s3);
+        p2++;
+
       }
-      ///
-      int y = 0;
-      while (aux[y] != NULL) {
-        char str2[500];
-        aux[y].toCharArray(str2, 500);
-        const char s2[2] = "-";
-        char *token2;
-        token2 = strtok(str2, s2);
+      myRTC.setDS1302Time( d[1].toInt(), d[0].toInt(), 00, 5 , 11, 12, 2019);
 
-        String z[6];
-        int p = 0;
-        while ( token2 != NULL ) {
-          z[p] = String(token2);
-
-
-
-          token2 = strtok(NULL, s2);
-          p++;
-
-        }
-
-
-        clave1 = z[0];
-        clave2 = z[1];
-        clave3 = z[2];
-        upLight = z[3];
-        offLight = z[4];
-        horanow = z[5];
-        while (flatfecha) {
-
-
-
-          char str3[200];
-          horanow.toCharArray(str3, 200);
-          const char s3[2] = ":";
-          char *token3;
-          token3 = strtok(str3, s3);
-
-          String d[2];
-          int p2 = 0;
-          while ( token3 != NULL ) {
-            d[p2] = String(token3);
-
-
-            token3 = strtok(NULL, s3);
-            p2++;
-
-          }
-          myRTC.setDS1302Time( d[1].toInt(), d[0].toInt(), 00, 5 , 11, 12, 2019);
-
-          flatfecha = false;
-        }
+      flatfecha = false;
+    }
 
 
 
@@ -722,11 +808,11 @@ void obtenerPass(){
 
 
 
-        ////////////////
+    ////////////////
 
 
-        y++;
-      }
+    y++;
+  }
 
 
 }
